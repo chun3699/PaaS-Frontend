@@ -21,10 +21,8 @@ const userToAddName = ref('')    // เก็บชื่อที่เลื�
 // 1. ต้องไม่อยู่ในทีมนี้อยู่แล้ว
 // 2. ชื่อต้องตรงกับคำค้นหา
 const filteredCandidates = computed(() => {
-  // กรองคนที่มีอยู่แล้วออกก่อน
-  const availableUsers = allUsers.value.filter(u => 
-    !teamMembers.value.some(member => member.id_users === u.id_users)
-  )
+  // กรองคนที่มีอยู่แล้วออกก่อน (คนที่มี Team ID ตรงกับทีมนี้)
+  const availableUsers = allUsers.value.filter(u => u.portainer_team_id !== selectedTeam.value?.portainer_team_id)
 
   const query = searchQuery.value.toLowerCase()
   if (!query) return availableUsers
@@ -38,7 +36,7 @@ const filteredCandidates = computed(() => {
 
 // Action: เลือกคนจาก Dropdown
 const selectCandidate = (user: any) => {
-  userToAddId.value = user.portainer_user_id // เช็ค Backend ว่ารับ ID ไหน (น่าจะ portainer_user_id)
+  userToAddId.value = user.portainer_user_id // ใช้ Portainer ID สำหรับยิง API
   userToAddName.value = user.username
   searchQuery.value = ''
   isDropdownOpen.value = false
@@ -122,8 +120,11 @@ const addMember = async () => {
     
     // อัปเดตข้อมูล Local
     await loadData() // โหลด User ใหม่ (เพราะ status team เปลี่ยน)
-    // อัปเดตสมาชิกในหน้านี้ทันที
-    teamMembers.value = allUsers.value.filter((u: any) => u.portainer_team_id === selectedTeam.value.portainer_team_id)
+    
+    // อัปเดตสมาชิกในหน้านี้ทันที (ต้องรอ loadData เสร็จก่อน)
+    if (selectedTeam.value) {
+        teamMembers.value = allUsers.value.filter((u: any) => u.portainer_team_id === selectedTeam.value.portainer_team_id)
+    }
     
     // Reset Form
     userToAddId.value = ''
@@ -178,16 +179,16 @@ onMounted(loadData)
         <div class="flex-1 overflow-y-auto p-2">
           <div 
             v-for="team in teams" 
-            :key="team.id"
+            :key="team.id_team"
             @click="selectTeam(team)"
             class="p-3 rounded-lg cursor-pointer mb-1 flex justify-between items-center group transition"
-            :class="selectedTeam?.id === team.id ? 'bg-blue-50 border border-blue-300' : 'hover:bg-gray-50 border border-transparent'"
+            :class="selectedTeam?.id_team === team.id_team ? 'bg-blue-50 border border-blue-300' : 'hover:bg-gray-50 border border-transparent'"
           >
             <div>
               <span class="font-bold text-gray-700 block">{{ team.name }}</span>
               <span class="text-xs text-gray-400">PID: {{ team.portainer_team_id }}</span>
             </div>
-            <button @click.stop="deleteTeam(team.id)" class="text-xs text-red-400 opacity-0 group-hover:opacity-100 hover:text-red-600 bg-red-50 px-2 py-1 rounded">ลบ</button>
+            <button @click.stop="deleteTeam(team.id_team)" class="text-xs text-red-400 opacity-0 group-hover:opacity-100 hover:text-red-600 bg-red-50 px-2 py-1 rounded">ลบ</button>
           </div>
         </div>
       </div>
@@ -295,7 +296,7 @@ onMounted(loadData)
 
         <!-- No Selection -->
         <div v-else class="h-full flex flex-col items-center justify-center text-gray-300">
-          <div class="text-8xl mb-6">👈</div>
+          <div class="text-8xl mb-6 opacity-20">👈</div>
           <p class="text-xl font-medium text-gray-400">เลือกทีมจากฝั่งซ้าย</p>
           <p class="text-sm">เพื่อจัดการสมาชิก</p>
         </div>

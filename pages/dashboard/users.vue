@@ -112,7 +112,7 @@ onMounted(fetchUsers)
           <div class="space-y-2">
             <input 
                 v-model="newUser.username" 
-                placeholder="Username (เช่น 6601xxxx)" 
+                placeholder="Username" 
                 class="border p-2 rounded w-full text-sm focus:ring-2 focus:ring-blue-500 outline-none"
             >
             <div class="relative">
