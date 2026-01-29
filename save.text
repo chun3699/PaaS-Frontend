@@ -1,0 +1,98 @@
+<script setup lang="ts">
+definePageMeta({ layout: 'dashboard' })
+const config = useRuntimeConfig()
+
+const envs = ref<any[]>([])
+const newEnvName = ref('')
+const isCreating = ref(false)
+
+const fetchEnvs = async () => {
+  try {
+    const res: any = await $fetch(`${config.public.apiBase}/environmentsql`, { credentials: 'include' })
+    envs.value = res
+  } catch (e) { console.error(e) }
+}
+
+const createEnv = async () => {
+  if (!newEnvName.value) return
+  isCreating.value = true
+  try {
+    await $fetch(`${config.public.apiBase}/environments`, {
+      method: 'POST',
+      body: { name: newEnvName.value },
+      credentials: 'include'
+    })
+    alert('✅ สร้าง Environment สำเร็จ!')
+    newEnvName.value = ''
+    fetchEnvs()
+  } catch (e: any) {
+    alert('❌ Error: ' + (e.data?.details || e.message))
+  } finally {
+    isCreating.value = false
+  }
+}
+
+const deleteEnv = async (id: any) => {
+  if (!confirm('⚠️ คำเตือน: การลบ Environment จะทำให้ Project ทั้งหมดในนี้หายไป!\n\nยืนยันหรือไม่?')) return
+  try {
+    await $fetch(`${config.public.apiBase}/environments/${id}`, { 
+      method: 'DELETE',
+      credentials: 'include'
+    })
+    fetchEnvs()
+  } catch (e: any) {
+    alert('❌ ลบไม่ได้: ' + (e.data?.error || e.message))
+  }
+}
+
+onMounted(fetchEnvs)
+</script>
+
+<template>
+  <div>
+    <h2 class="text-3xl font-bold mb-6 text-slate-800">🏫 Environments Management</h2>
+
+    <div class="bg-white p-6 rounded-xl shadow-sm mb-8 border border-gray-200">
+      <h3 class="font-bold text-lg mb-4 text-gray-700">สร้าง Environment ใหม่</h3>
+      <div class="flex gap-4">
+        <input 
+          v-model="newEnvName" 
+          type="text" 
+          placeholder="ชื่อ Environment (เช่น Class_2569)" 
+          class="flex-1 border p-3 rounded-lg focus:ring-2 focus:ring-blue-500 outline-none"
+          @keyup.enter="createEnv"
+        >
+        <button 
+          @click="createEnv" 
+          :disabled="isCreating"
+          class="bg-blue-600 text-white px-8 py-3 rounded-lg hover:bg-blue-700 disabled:bg-gray-400 font-bold transition whitespace-nowrap"
+        >
+          {{ isCreating ? 'กำลังสร้าง...' : '+ สร้างใหม่' }}
+        </button>
+      </div>
+    </div>
+
+    <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+      <div v-for="env in envs" :key="env.id" class="bg-white p-6 rounded-xl shadow-sm border border-gray-100 hover:shadow-md transition relative group">
+        <div class="flex justify-between items-start mb-4">
+          <div>
+            <h3 class="text-xl font-bold text-slate-800">{{ env.name }}</h3>
+            <span class="text-xs bg-slate-100 text-slate-500 px-2 py-1 rounded mt-1 inline-block">PID: {{ env.portainer_endpoint_id }}</span>
+          </div>
+          <div class="bg-green-100 text-green-700 px-2 py-1 rounded text-xs font-bold">Active</div>
+        </div>
+        
+        <div class="text-sm text-gray-600 mb-6">
+            <p><strong>URL:</strong> <span class="font-mono text-xs bg-gray-50 px-1 rounded">{{ env.url }}</span></p>
+        </div>
+
+        <button 
+          @click="deleteEnv(env.id)" 
+          class="w-full py-2 border border-red-200 text-red-500 rounded hover:bg-red-50 text-sm transition font-medium"
+        >
+          ลบ Environment
+        </button>
+      </div>
+    </div>
+  </div>
+</template>
