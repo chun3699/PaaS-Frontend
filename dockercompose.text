@@ -1,0 +1,23 @@
+version: '3.8'
+
+services:
+  frontend:
+    container_name: paas_frontend
+    
+    build:
+      # 🔥 สูตรอาจารย์: ใส่ URL Git Frontend + Token
+      # Docker จะวิ่งไปดึง Dockerfile และโค้ดมา Build เอง
+      context: https://chun3699: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@github.com/chun3699/PaaS-Frontend.git#main
+      dockerfile: Dockerfile
+      
+    restart: unless-stopped
+    
+    # เปิด Port ออกมา (ถ้าจะเข้าผ่าน IP ตรงๆ)
+    # ผมใส่ 3002 ไว้ (เพราะ Backend คุณใช้ 3001 ไปแล้ว)
+    # เข้าเว็บผ่าน: http://10.33.4.47:3002
+    ports:
+      - "3001:3000"
+    
+    environment:
+      # เหลือแค่บอกให้ Nuxt รันที่ Port 3000 (ภายใน Container)
+      PORT: 3000

@@ -9,7 +9,7 @@ WORKDIR /app
 # 2. 🔥 สูตรอาจารย์: สั่ง Clone โค้ดลงมาเอง
 # ⚠️ เปลี่ยน TOKEN, USER, REPO ให้เป็นของ Frontend คุณ
 RUN rm -rf ./* && \
-    git clone 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
+    git clone ttps://chun3699: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@github.com/chun3699/PaaS-Frontend.git#main
 
 # 3. ติดตั้ง Library
 RUN npm install
