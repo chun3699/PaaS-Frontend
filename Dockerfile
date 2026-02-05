@@ -9,7 +9,7 @@ WORKDIR /app
 # 2. 🔥 สูตรอาจารย์: สั่ง Clone โค้ดลงมาเอง
 # ⚠️ เปลี่ยน TOKEN, USER, REPO ให้เป็นของ Frontend คุณ
 RUN rm -rf ./* && \
-    git clone https://chun3699:YOUR_GITHUB_TOKEN@github.com/chun3699/YOUR_FRONTEND_REPO.git .
+    git clone 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
 
 # 3. ติดตั้ง Library
 RUN npm install
