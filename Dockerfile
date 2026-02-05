@@ -23,7 +23,6 @@ RUN npm run build
 EXPOSE 3001
 
 # 6. ตั้งค่า Environment
-ENV HOST=0.0.0.0
 ENV PORT=3001
 ENV NITRO_PORT=3001
 
