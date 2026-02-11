@@ -7,7 +7,7 @@ services:
     build:
       # 🔥 สูตรอาจารย์: ใส่ URL Git Frontend + Token
       # Docker จะวิ่งไปดึง Dockerfile และโค้ดมา Build เอง
-      context: https://chun3699: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@github.com/chun3699/PaaS-Frontend.git#main
+      context: https://chun3699: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@github.com/chun3699/PaaS-Frontend.git#main
       dockerfile: Dockerfile
       
     restart: unless-stopped
