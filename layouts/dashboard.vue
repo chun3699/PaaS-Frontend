@@ -28,7 +28,7 @@ const { logout } = useAuth()
           🔌 Port Reservation
         </NuxtLink>
 
-        <NuxtLink to="/database" class="nav-item">
+        <NuxtLink to="/dashboard/database" class="nav-item">
           🗄️ Database SQL
         </NuxtLink>
       </nav>
