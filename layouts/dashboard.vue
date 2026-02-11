@@ -4,7 +4,6 @@ const { logout } = useAuth()
 
 <template>
   <div class="flex h-screen bg-gray-100 font-sans">
-    <!-- Sidebar -->
     <aside class="w-64 bg-slate-900 text-white flex flex-col shadow-xl">
       <div class="p-6 text-xl font-bold border-b border-slate-700 flex items-center gap-2">
         🛠️ <span class="text-blue-400">PaaS</span> Admin
@@ -28,6 +27,10 @@ const { logout } = useAuth()
         <NuxtLink to="/dashboard/projects" class="nav-item">
           🔌 Port Reservation
         </NuxtLink>
+
+        <NuxtLink to="/database" class="nav-item">
+          🗄️ Database SQL
+        </NuxtLink>
       </nav>
 
       <div class="p-4 bg-slate-800">
@@ -38,7 +41,6 @@ const { logout } = useAuth()
       </div>
     </aside>
 
-    <!-- Content Area -->
     <main class="flex-1 overflow-auto p-8">
       <slot />
     </main>
@@ -50,6 +52,7 @@ const { logout } = useAuth()
   @apply flex items-center px-4 py-3 rounded-lg transition-colors hover:bg-slate-700 text-gray-300 hover:text-white;
 }
 
+/* Active Link Style */
 .router-link-active {
   @apply bg-blue-600 text-white shadow-lg;
 }
