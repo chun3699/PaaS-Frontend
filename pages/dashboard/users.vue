@@ -37,13 +37,8 @@ const isPasswordValid = computed(() => {
 
 // 2. สร้าง User ใหม่ (พร้อม Validation)
 const createUser = async () => {
-  // Validation เบื้องต้น
   if (!newUser.username || !newUser.password) return alert('กรุณากรอกข้อมูลให้ครบ')
-  
-  // Validation รหัสผ่าน
-  if (!isPasswordValid.value) {
-    return alert('❌ รหัสผ่านต้องมีความยาวอย่างน้อย 12 ตัวอักษร')
-  }
+  if (!isPasswordValid.value) return alert('❌ รหัสผ่านต้องมีความยาวอย่างน้อย 12 ตัวอักษร')
 
   try {
     await $fetch(`${config.public.apiBase}/users`, {
@@ -51,12 +46,13 @@ const createUser = async () => {
       body: newUser,
       credentials: 'include'
     })
-    alert('✅ สร้าง User สำเร็จ')
+    alert('✅ สร้างนิสิตสำเร็จ')
     newUser.username = ''
     newUser.password = ''
     fetchUsers()
   } catch (e: any) {
-    alert('Error: ' + (e.data?.details || e.message))
+    // ✅ ดึง Error จาก Backend มาแสดง
+    alert(e.data?.error || e.data?.message || e.message || "เกิดข้อผิดพลาด");
   }
 }
 
@@ -70,7 +66,10 @@ const deleteUser = async (id: any) => {
         selectedUser.value = null
         userProjects.value = []
     }
-  } catch (e: any) { alert('ลบไม่ได้: ' + e.message) }
+  } catch (e: any) { 
+    // ✅ ดึง Error จาก Backend มาแสดง
+    alert(e.data?.error || e.data?.message || e.message || "เกิดข้อผิดพลาด");
+  }
 }
 
 // 4. เลือก User -> ดู Port
@@ -87,8 +86,11 @@ const revokePort = async (projId: any) => {
   if (!confirm('ยืนยันคืน Port นี้? Container ที่ใช้อยู่จะถูกลบ!')) return
   try {
     await $fetch(`${config.public.apiBase}/projects/${projId}`, { method: 'DELETE', credentials: 'include' })
-    selectUser(selectedUser.value) // โหลดข้อมูลใหม่
-  } catch(e) { alert('ลบไม่สำเร็จ') }
+    selectUser(selectedUser.value) 
+  } catch(e: any) { 
+    // ✅ ดึง Error จาก Backend มาแสดง
+    alert(e.data?.error || e.data?.message || e.message || "เกิดข้อผิดพลาด");
+  }
 }
 
 onMounted(fetchUsers)
@@ -100,10 +102,8 @@ onMounted(fetchUsers)
 
     <div class="flex gap-6 h-full items-start">
       
-      <!-- 🟢 ฝั่งซ้าย: รายชื่อนิสิต (มีค้นหา + สร้าง) -->
       <div class="w-1/3 bg-white rounded-xl shadow-sm flex flex-col border border-gray-200 h-full">
         
-        <!-- Form สร้าง User -->
         <div class="p-5 border-b bg-slate-50 rounded-t-xl space-y-3">
           <h3 class="font-bold text-slate-700 flex items-center gap-2">
             <span>👤 เพิ่มนิสิตใหม่</span>
@@ -123,7 +123,6 @@ onMounted(fetchUsers)
                     class="border p-2 rounded w-full text-sm focus:ring-2 focus:ring-blue-500 outline-none"
                     :class="{'border-red-300 bg-red-50': newUser.password && !isPasswordValid, 'border-green-300': isPasswordValid}"
                 >
-                <!-- แจ้งเตือนรหัสผ่าน -->
                 <p v-if="newUser.password && !isPasswordValid" class="text-xs text-red-500 mt-1">
                     ⚠️ ต้องมีอย่างน้อย 12 ตัวอักษร (ปัจจุบัน: {{ newUser.password.length }})
                 </p>
@@ -142,7 +141,6 @@ onMounted(fetchUsers)
           </button>
         </div>
         
-        <!-- 🔍 ช่องค้นหา -->
         <div class="p-3 border-b bg-white sticky top-0">
             <div class="relative">
                 <span class="absolute left-3 top-2.5 text-gray-400 text-xs">🔍</span>
@@ -155,7 +153,6 @@ onMounted(fetchUsers)
             </div>
         </div>
 
-        <!-- รายชื่อ (List) -->
         <div class="flex-1 overflow-y-auto p-2 scrollbar-thin">
           <div v-if="filteredUsers.length === 0" class="text-center py-8 text-gray-400 text-sm">
             ไม่พบข้อมูลที่ค้นหา
@@ -189,7 +186,6 @@ onMounted(fetchUsers)
         </div>
       </div>
 
-      <!-- 🔵 ฝั่งขวา: รายละเอียด Port -->
       <div class="w-2/3 bg-white rounded-xl shadow-sm p-6 border border-gray-200 h-full overflow-y-auto">
         <div v-if="selectedUser" class="animate-fade-in">
           <div class="flex justify-between items-center mb-6 pb-4 border-b">

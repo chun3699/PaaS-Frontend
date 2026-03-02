@@ -4,29 +4,22 @@ definePageMeta({ layout: 'dashboard' })
 const config = useRuntimeConfig()
 const API_URL = config.public.apiBase
 
-// --- State ---
 const users = ref<any[]>([])
 const loading = ref(false)
 const searchQuery = ref('')
-const selectedIds = ref<Set<number>>(new Set()) // เก็บ ID ของคนที่ติ๊กถูก
-const processingIds = ref<Set<number>>(new Set()) // เก็บ ID ของคนที่กำลังหมุนติ้วๆ
+const selectedIds = ref<Set<number>>(new Set()) 
+const processingIds = ref<Set<number>>(new Set()) 
 
-// --- 1. Load Data ---
 const fetchUsers = async () => {
   loading.value = true
-  selectedIds.value.clear() // ล้าง Selection เมื่อโหลดใหม่
+  selectedIds.value.clear() 
   try {
     const res = await $fetch(`${API_URL}/users`, { credentials: 'include' })
     users.value = res as any[] || []
-  } catch (e) {
-    console.error('Fetch error:', e)
-  } finally {
-    loading.value = false
-  }
+  } catch (e) { console.error('Fetch error:', e) } 
+  finally { loading.value = false }
 }
 
-// --- Computed ---
-// กรอง User ตามคำค้นหา
 const filteredUsers = computed(() => {
   if (!searchQuery.value) return users.value
   const lowerSearch = searchQuery.value.toLowerCase()
@@ -36,20 +29,13 @@ const filteredUsers = computed(() => {
   )
 })
 
-// เช็คว่าเลือกครบทุกคนในหน้าปัจจุบันไหม
 const isAllSelected = computed(() => {
   return filteredUsers.value.length > 0 && filteredUsers.value.every(u => selectedIds.value.has(u.id_users))
 })
 
-// --- Selection Logic ---
 const toggleSelectAll = () => {
-  if (isAllSelected.value) {
-    // ถ้าเลือกครบแล้ว -> ยกเลิกทั้งหมด
-    selectedIds.value.clear()
-  } else {
-    // ถ้ายังไม่ครบ -> เลือกทุกคนที่โชว์อยู่ (Filtered)
-    filteredUsers.value.forEach(u => selectedIds.value.add(u.id_users))
-  }
+  if (isAllSelected.value) selectedIds.value.clear()
+  else filteredUsers.value.forEach(u => selectedIds.value.add(u.id_users))
 }
 
 const toggleSelection = (id: number) => {
@@ -57,15 +43,13 @@ const toggleSelection = (id: number) => {
   else selectedIds.value.add(id)
 }
 
-// --- Bulk Actions ---
 const bulkAction = async (action: 'create' | 'delete') => {
   const targetIds = Array.from(selectedIds.value)
   if (targetIds.length === 0) return
 
-  // กรองเฉพาะคนที่มีเงื่อนไขตรง (เช่น จะสร้าง ก็ต้องเลือกเฉพาะคนที่ยังไม่มี)
   const usersToProcess = users.value.filter(u => 
     selectedIds.value.has(u.id_users) && 
-    (action === 'create' ? !u.mysql : u.mysql) // mysql: 0 or 1 works as boolean
+    (action === 'create' ? !u.mysql : u.mysql) 
   )
 
   if (usersToProcess.length === 0) {
@@ -79,9 +63,8 @@ const bulkAction = async (action: 'create' | 'delete') => {
 
   if (!confirm(confirmMsg)) return
 
-  // เริ่มกระบวนการ Loop ยิง API
   for (const user of usersToProcess) {
-    processingIds.value.add(user.id_users) // เปิด Loading รายคน
+    processingIds.value.add(user.id_users) 
     try {
       await $fetch(`${API_URL}/sql/${action}-db`, {
         method: action === 'create' ? 'POST' : 'DELETE',
@@ -89,22 +72,22 @@ const bulkAction = async (action: 'create' | 'delete') => {
         credentials: 'include'
       })
       
-      // Update State ใน Frontend ทันที (ไม่ต้องโหลดใหม่)
       const target = users.value.find(u => u.id_users === user.id_users)
       if (target) target.mysql = action === 'create' ? 1 : 0
       
-    } catch (e) {
-      console.error(`Error processing ${user.username}:`, e)
+    } catch (e: any) {
+      // ✅ แจ้งเตือนข้อผิดพลาดทีละคนถ้าพัง
+      const errorMessage = e.data?.error || e.data?.message || e.message || "เกิดข้อผิดพลาด";
+      alert(`ข้อผิดพลาด (${user.username}): ` + errorMessage);
     } finally {
       processingIds.value.delete(user.id_users)
     }
   }
 
   alert('ดำเนินการเสร็จสิ้น')
-  selectedIds.value.clear() // เคลียร์ Checkbox
+  selectedIds.value.clear() 
 }
 
-// --- Individual Action ---
 const singleAction = async (user: any, action: 'create' | 'delete') => {
   if (action === 'delete' && !confirm(`ยืนยันลบ Database ของ ${user.username}?`)) return
   
@@ -116,15 +99,14 @@ const singleAction = async (user: any, action: 'create' | 'delete') => {
       credentials: 'include'
     })
     
-    // Update State
     const target = users.value.find(u => u.id_users === user.id_users)
     if (target) target.mysql = action === 'create' ? 1 : 0
     
-    // ถ้าสร้างสำเร็จ แจ้งเตือนเล็กน้อย
     if (action === 'create') alert(`✅ สร้างให้ ${user.username} สำเร็จ! ใช้รหัสเดิม Login ได้เลย`)
 
   } catch (e: any) {
-    alert('Error: ' + (e.data?.message || e.message))
+    // ✅ แจ้งเตือนภาษาไทยจาก Backend
+    alert(e.data?.error || e.data?.message || e.message || "เกิดข้อผิดพลาด");
   } finally {
     processingIds.value.delete(user.id_users)
   }

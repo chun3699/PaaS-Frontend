@@ -2,60 +2,38 @@
 definePageMeta({ layout: 'dashboard' })
 const config = useRuntimeConfig()
 
-// State ข้อมูลหลัก
 const teams = ref<any[]>([])
-const allUsers = ref<any[]>([]) // User ทั้งหมดในระบบ
+const allUsers = ref<any[]>([]) 
 const selectedTeam = ref<any>(null)
-const teamMembers = ref<any[]>([]) // สมาชิกในทีมที่เลือกอยู่
+const teamMembers = ref<any[]>([]) 
 
-// Form สร้างทีม
 const newTeamName = ref('')
-
-// --- 🔍 ส่วนค้นหาเพื่อเพิ่มสมาชิก (Searchable Dropdown) ---
 const searchQuery = ref('')
 const isDropdownOpen = ref(false)
-const userToAddId = ref('')      // เก็บ ID ที่เลือก
-const userToAddName = ref('')    // เก็บชื่อที่เลือก (เพื่อโชว์ใน Input)
+const userToAddId = ref('')      
+const userToAddName = ref('')    
 
-// Computed: กรองรายชื่อคนที่จะเพิ่ม (Candidates)
-// 1. ต้องไม่อยู่ในทีมนี้อยู่แล้ว
-// 2. ชื่อต้องตรงกับคำค้นหา
 const filteredCandidates = computed(() => {
-  // กรองคนที่มีอยู่แล้วออกก่อน (คนที่มี Team ID ตรงกับทีมนี้)
   const availableUsers = allUsers.value.filter(u => u.portainer_team_id !== selectedTeam.value?.portainer_team_id)
-
   const query = searchQuery.value.toLowerCase()
   if (!query) return availableUsers
-
-  // กรองตามคำค้น
-  return availableUsers.filter(u => 
-    u.username.toLowerCase().includes(query) || 
-    u.id_users.toString().includes(query)
-  )
+  return availableUsers.filter(u => u.username.toLowerCase().includes(query) || u.id_users.toString().includes(query))
 })
 
-// Action: เลือกคนจาก Dropdown
 const selectCandidate = (user: any) => {
-  userToAddId.value = user.portainer_user_id // ใช้ Portainer ID สำหรับยิง API
+  userToAddId.value = user.portainer_user_id 
   userToAddName.value = user.username
   searchQuery.value = ''
   isDropdownOpen.value = false
 }
 
-// Action: พิมพ์ค้นหา
 const onSearchType = () => {
   if (!isDropdownOpen.value) isDropdownOpen.value = true
-  if (userToAddId.value) { // ถ้าพิมพ์ใหม่ ให้เคลียร์ค่าเดิม
-      userToAddId.value = ''
-      userToAddName.value = ''
-  }
+  if (userToAddId.value) { userToAddId.value = ''; userToAddName.value = ''; }
 }
 
 const closeDropdown = () => { setTimeout(() => { isDropdownOpen.value = false }, 200) }
-// -----------------------------------------------------------
 
-
-// 1. โหลดข้อมูลทีม และ User ทั้งหมด
 const loadData = async () => {
   try {
     const [resTeams, resUsers] = await Promise.all([
@@ -67,19 +45,14 @@ const loadData = async () => {
   } catch (e) { console.error(e) }
 }
 
-// 2. เลือกทีม -> โหลดสมาชิก
 const selectTeam = async (team: any) => {
   selectedTeam.value = team
-  // กรอง User จาก List ที่โหลดมาแล้ว
   teamMembers.value = allUsers.value.filter((u: any) => u.portainer_team_id === team.portainer_team_id)
-  
-  // Reset Form เพิ่มคน
   userToAddId.value = ''
   userToAddName.value = ''
   searchQuery.value = ''
 }
 
-// 3. สร้างทีมใหม่
 const createTeam = async () => {
   if (!newTeamName.value) return
   try {
@@ -91,51 +64,45 @@ const createTeam = async () => {
     alert('✅ สร้างทีมสำเร็จ')
     newTeamName.value = ''
     loadData()
-  } catch (e: any) { alert(e.message) }
+  } catch (e: any) { 
+    // ✅ แจ้งเตือนภาษาไทยจาก Backend
+    alert(e.data?.error || e.data?.message || e.message || "เกิดข้อผิดพลาด");
+  }
 }
 
-// 4. ลบทีม
 const deleteTeam = async (id: any) => {
   if (!confirm('ยืนยันลบทีม? สมาชิกในทีมจะหลุดออกจากทีมทั้งหมด!')) return
   try {
     await $fetch(`${config.public.apiBase}/teams/${id}`, { method: 'DELETE', credentials: 'include' })
     loadData()
     selectedTeam.value = null
-  } catch (e: any) { alert(e.message) }
+  } catch (e: any) { 
+    // ✅ แจ้งเตือนภาษาไทยจาก Backend
+    alert(e.data?.error || e.data?.message || e.message || "เกิดข้อผิดพลาด");
+  }
 }
 
-// 5. เพิ่มสมาชิกเข้าทีม (Submit)
 const addMember = async () => {
   if (!userToAddId.value) return alert('กรุณาเลือกนิสิตก่อน')
-  
   try {
     await $fetch(`${config.public.apiBase}/users/team`, {
       method: 'PUT',
-      body: {
-        userId: userToAddId.value, 
-        teamId: selectedTeam.value.portainer_team_id
-      },
+      body: { userId: userToAddId.value, teamId: selectedTeam.value.portainer_team_id },
       credentials: 'include'
     })
-    
-    // อัปเดตข้อมูล Local
-    await loadData() // โหลด User ใหม่ (เพราะ status team เปลี่ยน)
-    
-    // อัปเดตสมาชิกในหน้านี้ทันที (ต้องรอ loadData เสร็จก่อน)
+    await loadData() 
     if (selectedTeam.value) {
         teamMembers.value = allUsers.value.filter((u: any) => u.portainer_team_id === selectedTeam.value.portainer_team_id)
     }
-    
-    // Reset Form
     userToAddId.value = ''
     userToAddName.value = ''
     alert('✅ เพิ่มสมาชิกสำเร็จ')
   } catch (e: any) {
-    alert('Error: ' + (e.data?.error || e.message))
+    // ✅ แจ้งเตือนภาษาไทยจาก Backend
+    alert(e.data?.error || e.data?.message || e.message || "เกิดข้อผิดพลาด");
   }
 }
 
-// 6. เตะออกจากทีม
 const removeMember = async (userId: any) => {
   if (!confirm('เอานิสิตคนนี้ออกจากทีม?')) return
   try {
@@ -144,13 +111,14 @@ const removeMember = async (userId: any) => {
       body: { userId: userId },
       credentials: 'include'
     })
-    
     await loadData()
-    // Refresh Members List
     if (selectedTeam.value) {
         teamMembers.value = allUsers.value.filter((u: any) => u.portainer_team_id === selectedTeam.value.portainer_team_id)
     }
-  } catch (e: any) { alert('Error: ' + e.message) }
+  } catch (e: any) { 
+    // ✅ แจ้งเตือนภาษาไทยจาก Backend
+    alert(e.data?.error || e.data?.message || e.message || "เกิดข้อผิดพลาด");
+  }
 }
 
 onMounted(loadData)
@@ -162,9 +130,7 @@ onMounted(loadData)
 
     <div class="flex gap-6 h-full items-start">
       
-      <!-- 🟢 Left: Team List -->
       <div class="w-1/3 bg-white rounded-xl shadow-sm flex flex-col border border-gray-200 h-full">
-        <!-- Create -->
         <div class="p-4 border-b bg-gray-50 rounded-t-xl flex gap-2">
           <input 
             v-model="newTeamName" 
@@ -175,7 +141,6 @@ onMounted(loadData)
           <button @click="createTeam" class="bg-blue-600 text-white px-3 py-2 rounded text-sm hover:bg-blue-700 whitespace-nowrap">+ สร้าง</button>
         </div>
 
-        <!-- List -->
         <div class="flex-1 overflow-y-auto p-2">
           <div 
             v-for="team in teams" 
@@ -193,11 +158,8 @@ onMounted(loadData)
         </div>
       </div>
 
-      <!-- 🔵 Right: Team Members & Add Member -->
       <div class="w-2/3 bg-white rounded-xl shadow-sm p-6 border border-gray-200 h-full flex flex-col">
-        
         <div v-if="selectedTeam" class="h-full flex flex-col">
-          <!-- Header & Add Member Section -->
           <div class="mb-6 pb-6 border-b">
              <div class="flex justify-between items-end mb-4">
                  <div>
@@ -206,11 +168,9 @@ onMounted(loadData)
                  </div>
              </div>
              
-             <!-- 🔍 Searchable Add Member Box -->
              <div class="bg-blue-50 p-4 rounded-lg border border-blue-100 relative">
                 <label class="block text-sm font-bold text-blue-800 mb-2">เพิ่มสมาชิกเข้าทีมนี้</label>
                 <div class="flex gap-2 relative">
-                    <!-- Search Input -->
                     <div class="relative flex-1">
                         <span class="absolute left-3 top-2.5 text-gray-400">🔍</span>
                         <input 
@@ -223,10 +183,8 @@ onMounted(loadData)
                             class="w-full border border-gray-300 pl-9 p-2 rounded bg-white focus:ring-2 focus:ring-blue-500 outline-none text-sm h-10"
                             :class="{'border-blue-500 bg-blue-50': userToAddName}"
                         >
-                        <!-- Clear Button -->
                         <button v-if="searchQuery || userToAddName" @click="searchQuery=''; userToAddName=''; userToAddId=''" class="absolute right-3 top-2.5 text-gray-400 hover:text-red-500">✕</button>
 
-                        <!-- Dropdown List -->
                         <div v-if="isDropdownOpen" class="absolute top-full left-0 w-full mt-1 bg-white border border-gray-200 rounded-lg shadow-xl max-h-48 overflow-y-auto z-10">
                             <div v-if="filteredCandidates.length === 0" class="p-3 text-center text-gray-400 text-sm">
                                 ไม่พบข้อมูล (หรืออยู่ในทีมนี้แล้ว)
@@ -246,7 +204,6 @@ onMounted(loadData)
                         </div>
                     </div>
 
-                    <!-- Add Button -->
                     <button 
                         @click="addMember" 
                         :disabled="!userToAddId"
@@ -258,7 +215,6 @@ onMounted(loadData)
              </div>
           </div>
 
-          <!-- Members Table -->
           <div class="flex-1 overflow-y-auto">
             <table v-if="teamMembers.length > 0" class="w-full text-left border-collapse">
               <thead class="bg-gray-50 text-gray-600 text-xs uppercase sticky top-0">
@@ -286,7 +242,6 @@ onMounted(loadData)
                 </tr>
               </tbody>
             </table>
-
             <div v-else class="h-48 flex flex-col items-center justify-center text-gray-400 border-2 border-dashed border-gray-100 rounded-lg">
               <div class="text-4xl mb-2">🍃</div>
               <p>ทีมนี้ยังไม่มีสมาชิก</p>
@@ -294,13 +249,11 @@ onMounted(loadData)
           </div>
         </div>
 
-        <!-- No Selection -->
         <div v-else class="h-full flex flex-col items-center justify-center text-gray-300">
           <div class="text-8xl mb-6 opacity-20">👈</div>
           <p class="text-xl font-medium text-gray-400">เลือกทีมจากฝั่งซ้าย</p>
           <p class="text-sm">เพื่อจัดการสมาชิก</p>
         </div>
-
       </div>
     </div>
   </div>
