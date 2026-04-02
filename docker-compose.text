@@ -1,3 +1,4 @@
+#อัพด้วย Portainer
 version: '3.8'
 
 services:
@@ -21,3 +22,25 @@ services:
     environment:
       # เหลือแค่บอกให้ Nuxt รันที่ Port 3000 (ภายใน Container)
       PORT: 3000
+
+
+# #อัพด้วย Filezilla
+# version: '3.8'
+
+# services:
+#   frontend:
+#     container_name: paas_frontend
+    
+#     # 🔥 ชี้ไปที่โฟลเดอร์ปัจจุบัน (ที่คุณลากไฟล์มาลง) แทนการดึงจาก Git
+#     build: .
+    
+#     restart: unless-stopped
+    
+#     # เปิด Port ออกมา (ถ้าจะเข้าผ่าน IP ตรงๆ)
+#     # เข้าเว็บผ่าน: http://<IPของเครื่องคุณ>:3001
+#     ports:
+#       - "3001:3000"
+    
+#     environment:
+#       # บอกให้ Nuxt รันที่ Port 3000 (ภายใน Container)
+#       PORT: 3000

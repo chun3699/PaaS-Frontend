@@ -10,7 +10,7 @@ export default defineNuxtConfig({
   runtimeConfig: {
     public: {
       // apiBase: 'http://10.33.4.47:3000/api' 
-      apiBase: 'http://10.33.4.47:3000/api' // ชี้ไปที่ Backend ของเรา
+      apiBase: 'http://10.34.8.220:3000/api' // ชี้ไปที่ Backend ของเรา
     }
   }
 
