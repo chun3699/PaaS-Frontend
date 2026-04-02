@@ -9,7 +9,7 @@ WORKDIR /app
 
 # 2. Clone (URL เดิมของคุณ)
 RUN rm -rf ./* && \
-    git clone -b main https://chun3699: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@github.com/chun3699/PaaS-Frontend.git .
+    git clone -b main https://chun3699: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@github.com/chun3699/PaaS-Frontend.git .
 
 # 3. ติดตั้ง Library
 RUN npm install
